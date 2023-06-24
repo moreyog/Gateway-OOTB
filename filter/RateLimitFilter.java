@@ -1,10 +1,13 @@
 package com.eaf.gateway.filter;
 
+import com.eaf.gateway.entity.RateLimit;
 import com.eaf.gateway.repo.RateLimitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.Date;
@@ -37,29 +40,30 @@ public class RateLimitFilter extends AbstractGatewayFilterFactory<RateLimitFilte
             //config.setUserPlan(userPlan);
 
             // Find the rate limit entity in the database
-//            RateLimitEntity rateLimitEntity = rateLimitRepository
-//                    .findByUserIdAndIpAddressAndRequestDate(userId, ipAddress, currentDate);
-//
-//            // If the rate limit entity doesn't exist, create a new one
-//            if (rateLimitEntity == null) {
-//                rateLimitEntity = new RateLimitEntity();
-//                rateLimitEntity.setUserId(userId);
-//                rateLimitEntity.setIpAddress(ipAddress);
-//                rateLimitEntity.setRequestDate(currentDate);
-//                rateLimitEntity.setRequestCount(1);
-//            } else {
-//                // If the rate limit entity exists, check if the request count exceeds the limit
-//                if (rateLimitEntity.getRequestCount() >= config.getRequestLimit()) {
-//                    // Return an error response or take appropriate action
-//                    return Mono.error(new RuntimeException("Rate limit exceeded."));
-//                }
-//
-//                // Increment the request count
-//                rateLimitEntity.setRequestCount(rateLimitEntity.getRequestCount() + 1);
-//            }
-//
-//            // Save the rate limit entity in the database
-//           // rateLimitRepository.save(rateLimitEntity);
+            RateLimit rateLimitEntity = rateLimitRepository
+                    .findByUserIdAndIpAddressAndRequestDate(userId, ipAddress, currentDate);
+
+            // If the rate limit entity doesn't exist, create a new one
+            if (rateLimitEntity == null) {
+                rateLimitEntity = new RateLimit();
+                rateLimitEntity.setUserId(userId);
+                rateLimitEntity.setIpAddress(ipAddress);
+                rateLimitEntity.setRequestDate(currentDate);
+                rateLimitEntity.setRequestCount(1);
+            } else {
+                // If the rate limit entity exists, check if the request count exceeds the limit
+                if (rateLimitEntity.getRequestCount() >= config.getRequestLimit()) {
+                    // Return an error response or take appropriate action
+                    exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+                    return exchange.getResponse().setComplete();
+                }
+
+                // Increment the request count
+                rateLimitEntity.setRequestCount(rateLimitEntity.getRequestCount() + 1);
+            }
+
+            // Save the rate limit entity in the database
+            rateLimitRepository.save(rateLimitEntity);
 
             // Proceed with the request
             return chain.filter(exchange);
