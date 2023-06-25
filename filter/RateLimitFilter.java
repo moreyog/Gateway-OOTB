@@ -2,6 +2,8 @@ package com.eaf.gateway.filter;
 
 import com.eaf.gateway.entity.RateLimit;
 import com.eaf.gateway.repo.RateLimitRepository;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Component
@@ -36,8 +39,7 @@ public class RateLimitFilter extends AbstractGatewayFilterFactory<RateLimitFilte
 
             System.out.println("rateLimitRepository " + rateLimitRepository);
             // Get the user plan from the request headers
-            //String userPlan = exchange.getRequest().getHeaders().getFirst("X-User-Plan");
-            //config.setUserPlan(userPlan);
+
 
             // Find the rate limit entity in the database
             RateLimit rateLimitEntity = rateLimitRepository
@@ -93,4 +95,35 @@ public class RateLimitFilter extends AbstractGatewayFilterFactory<RateLimitFilte
         }
     }
 
+// Add for ref. Other apporach based on ur
+
+//
+//    @Id
+//    @Column(length = 50)
+//    private String routeId; //url
+//
+//    private int limitForMinutes;
+//    private int requestCount;
+//    private LocalDateTime lastRequestTimestamp;
+
+
+//    private boolean isRateLimitExceeded(RateLimit rateLimit) {
+//        LocalDateTime currentTime = LocalDateTime.now();
+//        int limitForMinutes = rateLimit.getLimitForMinutes();
+//        int requestCount = rateLimit.getRequestCount();
+//
+//        LocalDateTime lastRequestTimestamp = rateLimit.getLastRequestTimestamp();
+//        LocalDateTime limitExpiryTime = lastRequestTimestamp.plusMinutes(limitForMinutes);
+//
+//        if (requestCount >= limitForMinutes && currentTime.isBefore(limitExpiryTime)) {
+//            return true;
+//        } else if (limitExpiryTime.isBefore(currentTime)) {
+//            // Reset the requestCount when the limitExpiryTime is in the past
+//            requestCount = 0;
+//            rateLimit.setRequestCount(requestCount);
+//            rateLimitRepository.save(rateLimit);
+//        }
+//
+//        return false;
+//    }
 }
